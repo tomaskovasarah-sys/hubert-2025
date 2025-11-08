@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Sledování jezdců</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 30px; background: #fafafa; }
+    select, button { font-size: 18px; margin: 10px; padding: 8px; border-radius: 8px; }
+    button { background-color: #3b82f6; color: white; border: none; }
+    button:disabled { background-color: #999; }
+  </style>
+</head>
+<body>
+  <h2>Sledování průjezdu jezdců 🐎</h2>
+
+  <label>Skupina:</label><br>
+  <select id="group">
+    <option value="intelektualky">Intelektuálky</option>
+    <option value="pubertacky">Puberťačky</option>
+    <option value="zelvy">Želvy</option>
+    <option value="sneci">Šneci</option>
+  </select><br>
+
+  <label>Jezdec:</label><br>
+  <select id="rider">
+    <option value="Markéta - Arista">Markéta - Arista</option>
+    <option value="Lucka - Tess">Lucka - Tess</option>
+    <option value="Linda - Hanička">Linda - Hanička</option>
+    <option value="Klárka - Merlin">Klárka - Merlin</option>
+    <option value="Kája - Marek">Kája - Marek</option>
+    <option value="Verča - Démonka">Verča - Démonka</option>
+    <option value="Anežka - Leon">Anežka - Leon</option>
+    <option value="Anička - Dasperr">Anička - Dasperr</option>
+    <option value="Sára - Hafling">Sára - Hafling</option>
+    <option value="Renča - Atena">Renča - Atena</option>
+    <option value="Renča - Kip">Renča - Kip</option>
+    <option value="Míša - Rival">Míša - Rival</option>
+    <option value="Anežka - Manilac">Anežka - Manilac</option>
+    <option value="Daja - Etna">Daja - Etna</option>
+  </select><br><br>
+
+  <button id="startBtn">START</button>
+  <button id="stopBtn" disabled>STOP</button>
+
+  <p id="status">Čekám na spuštění...</p>
+
+  <script>
+    const url = "https://script.google.com/macros/s/AKfycbxr9hbf9pjYXXG6CO_EhCCf-0M3gbUn9J2pB46XFM8UlBmNsZ9cU_-d7vdtV2FHwh0BVQ/exec"
+
+    let watchID = null;
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      const group = document.getElementById("group").value;
+      const rider = document.getElementById("rider").value;
+
+      document.getElementById("startBtn").disabled = true;
+      document.getElementById("stopBtn").disabled = false;
+      document.getElementById("status").innerText = "Sleduji polohu...";
+
+      if (!navigator.geolocation) {
+        alert("Geolokace není podporována!");
+        return;
+      }
+
+      watchID = navigator.geolocation.watchPosition(pos => {
+        const data = {
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude,
+          group,
+          rider
+        };
+
+        fetch(url, {
+          method: "POST",
+          body: JSON.stringify(data),
+          headers: { "Content-Type": "application/json" }
+        }).then(() => {
+          document.getElementById("status").innerText =
+            `📍 Odesláno: ${group} - ${rider} (${data.lat.toFixed(5)}, ${data.lon.toFixed(5)})`;
+        }).catch(() => {
+          document.getElementById("status").innerText = "❌ Chyba při odesílání!";
+        });
+      },
+      err => alert("Chyba GPS: " + err.message),
+      { enableHighAccuracy: true });
+    });
+
+    document.getElementById("stopBtn").addEventListener("click", () => {
+      if (watchID) {
+        navigator.geolocation.clearWatch(watchID);
+        watchID = null;
+        document.getElementById("startBtn").disabled = false;
+        document.getElementById("stopBtn").disabled = true;
+        document.getElementById("status").innerText = "Sledování zastaveno.";
+      }
+    });
+  </script>
+</body>
+</html>
